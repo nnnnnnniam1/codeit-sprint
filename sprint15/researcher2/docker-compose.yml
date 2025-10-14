@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  # 연구자1 - 학습 이미지
+  data-container:
+    image: yena1/mission15-train:latest
+    container_name: researcher1-train
+    tty: true                               # bash 실행 가능하게
+    stdin_open: true                        # jupyter에서 attach 가능하도록
+    command: ["sleep", "infinity"]    
+    environment:
+      - DATA_DIR=/app/data
+      - SHARED_DIR=/app/shared
+    volumes:
+      - req-volume:/app
+
+  # 연구자2 - 주피터 환경
+  jupyter:
+    image: jupyter/base-notebook:latest
+    container_name: researcher2-jupyter
+    user: root
+    ports:
+      - "8888:8888"
+    command: >
+      bash -c "cp /mnt/req/requirements.txt /app/requirements.txt &&
+      pip install -r /app/requirements.txt &&
+      start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - DATA_DIR=/app/data
+      - SHARED_DIR=/app/shared
+    depends_on:
+      - data-container
+    volumes_from:
+      - data-container
+    volumes:
+      - .:/app
+      - type: volume
+        source: req-volume
+        target: /mnt/req
+    working_dir: /app
+volumes:
+  req-volume:
