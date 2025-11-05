@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    container_name: movie-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    working_dir: /app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    environment:
+      - HF_HOME=/root/.cache/huggingface  # 모델 캐시 경로
+    networks:
+      - movie-network
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+    container_name: movie-frontend
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend:/app
+    working_dir: /app
+    command: streamlit run app.py --server.port 8501 --server.address 0.0.0.0 --server.runOnSave true --server.fileWatcherType watchdog
+    depends_on:
+      - backend
+    networks:
+      - movie-network
+    
+
+
+networks:
+  movie-network:
+    driver: bridge
